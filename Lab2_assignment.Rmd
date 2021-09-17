@@ -64,21 +64,22 @@ Steps in this assignment:
 ## Load data from {tidycensus}
 
 ```{r acs_vars, cache = TRUE, message = FALSE, warning = FALSE, results=FALSE}
-acs_vars <- c( "[PUT YOUR VAR CODES HERE]")
+acs_vars <- c("B01001B_002", #Estimate of Total Man
+              "B01001D_001") #Estimate of Total Asian
 
-myTracts <- c("[YOUR TRACTS GEOIDs HERE]")
+myTracts <- c("42101036900", "42101008801", "42101008802")
 
 acsTractsPHL.2019.sf <- get_acs(geography = "tract",
                              year = 2019,
-                             variables = acs_vars,
+                             variables = paste0(acs_vars,"E"),
                              geometry = TRUE,
                              state  = "PA",
                              county = "Philadelphia",
                              output = "wide") %>%
   dplyr::select (GEOID, NAME, all_of(paste0(acs_vars,"E"))) %>%
-  rename ("[RENAME YOUR VARIABLES HERE]") %>%
+  rename (total_male.2019 = B01001B_002E, total_asian.2019 = B01001D_001E) %>%
   mutate(Neighborhood = ifelse(GEOID %in% myTracts,
-                               "[YOUR NEIGHBORHOOD NAME HERE]",
+                               "UNIVERSITY CITY",
                                "REST OF PHILADELPHIA"))
 ```
 
@@ -86,24 +87,25 @@ acsTractsPHL.2019.sf <- get_acs(geography = "tract",
 
 ```{r}
 acsTractsPHL.2019.sf <- acsTractsPHL.2019.sf %>% 
-  st_transform(crs = "[PUT THE WGS84 EPSG CODE HERE]")
+  st_transform(crs = "EPSG:4326")
 ```
 
 ## Plot with {ggplot2}
 
 ```{r ggplot_geom_sf, warning = FALSE, echo = FALSE}
 ggplot()+
-  geom_sf(data = acsTractsPHL.2019.sf, aes(fill = "[YOUR VARIABLE NAME HERE]"),
+  geom_sf(data = acsTractsPHL.2019.sf, aes(fill = total_asian.2019),
           color = "transparent")+
+  scale_fill_viridis_c("Asian Population", option = "B", begin = 0.4)+
   geom_sf(data = acsTractsPHL.2019.sf %>%
-            filter(Neighborhood == "[YOUR NEIGHBORHOOD NAME HERE]") %>%
+            filter(Neighborhood == "UNIVERSITY CITY") %>%
             st_union(),
           color = "white",
           fill = "transparent")+
   # Bonus to figure out different color ramps with scale_fill_viridis()
   labs(
-    title = "[YOUR TITLE HERE]",
-    subtitle = "[YOUR SUBTITLE HERE]",
-    caption = "[YOUR CAPTION HERE]")
+    title = "Amount of Asian in Philadelphia by Tract",
+    subtitle = "",
+    caption = "Data: US Census Bureau, ACS 5-year estimates")
 
 ```
